@@ -21,10 +21,13 @@ jobs:
       with:
         go-version: '1.20'
 
-    - name: Build
-      run: go build -ldflags="-s -w" -o main -v ./... 
+    - name: Build amd64
+      run: go build -ldflags="-s -w" -o _build/detect-amd64 -v ./...
 
+    - name: Build arm64
+      run: GOARCH=arm64 go build -ldflags="-s -w" -o _build/detect-arm64 -v ./...
+    
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.3.3
       with:
-        path: main
+        path: _build/
