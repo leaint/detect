@@ -26,11 +26,6 @@ type config struct {
 	gap       time.Duration
 }
 
-/*
-通过各种抓包工具获取第一个UDP握手包
-*/
-var packet []byte = []byte{}
-
 var resp []byte = []byte{2, 0, 0, 0}
 
 func initConfig() config {
