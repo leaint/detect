@@ -99,3 +99,9 @@ packet = msg['message_type']+msg['reserved_zero'] + \
 
 for i in packet:
     print(i, end=',')
+
+with open('key.go', 'w') as key_file:
+    key_file.write('package main\n\nvar packet []byte = []byte{\n')
+    for i in packet:
+        key_file.write(f'{i},')
+    key_file.write('\n}\n')
