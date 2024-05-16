@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -24,6 +25,7 @@ type config struct {
 	batchsize int
 	count     int
 	gap       time.Duration
+	packet    []byte
 }
 
 var resp []byte = []byte{2, 0, 0, 0}
@@ -34,6 +36,7 @@ func initConfig() config {
 	count := flag.Int("c", 1, "how many packets for each ip address to send. >= 1")
 	timeout := flag.Int64("w", 1000, "a timeout for send or recv packet, in milliseconds. recommend > 400")
 	gap := flag.Int64("g", 1000, "a gap time for next packet to send, in milliseconds.")
+	packetFile := flag.String("p", "", "first message packet file")
 
 	flag.Parse()
 
@@ -58,16 +61,40 @@ func initConfig() config {
 		f = fi
 	}
 
+	var thisPacket []byte = nil
+	if *packetFile == "" {
+		thisPacket = packet
+	} else {
+
+		fi, err := os.OpenFile(*packetFile, os.O_RDONLY, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+
+		buf, err := io.ReadAll(fi)
+		if err != nil {
+			panic(err)
+		}
+		fi.Close()
+
+		thisPacket = buf
+	}
+
+	if len(thisPacket) < 5 || !bytes.Equal(thisPacket[:4], []byte{1, 0, 0, 0}) {
+		panic("packet is not a valid first message")
+	}
+
 	return config{
 		batchsize: *batchsize,
 		ipf:       f,
 		timeout:   time.Duration(*timeout) * time.Millisecond,
 		count:     *count,
 		gap:       time.Duration(*gap) * time.Millisecond,
+		packet:    thisPacket,
 	}
 }
 
-func sendS(address string, timeout time.Duration, gap time.Duration, count int, buf []byte) []int {
+func sendS(address string, timeout time.Duration, gap time.Duration, count int, packet []byte, buf []byte) []int {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		log.Println(err)
@@ -133,7 +160,7 @@ func main() {
 			var buf [1024]byte
 
 			for address := range ch {
-				pings := sendS(address, conf.timeout, conf.gap, conf.count, buf[:])
+				pings := sendS(address, conf.timeout, conf.gap, conf.count, conf.packet, buf[:])
 				if len(pings) > 0 {
 
 					avgtime := 0
