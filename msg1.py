@@ -105,3 +105,7 @@ with open('key.go', 'w') as key_file:
     for i in packet:
         key_file.write(f'{i},')
     key_file.write('\n}\n')
+
+with open('key.bin', 'wb') as key_file:
+    for i in packet:
+        key_file.write(packet)
